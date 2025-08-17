@@ -110,13 +110,93 @@ document.addEventListener('DOMContentLoaded', () => {
     stageThresholds.push(cumulative);
   }
 
-  // State variables.
+  // State variables. These track the chosen operation, number of correct answers,
+  // the current rank points and stage, and the current question/difficulty.
   let selectedOperation = '+';
   let correctAnswersCount = 0;
   let rankPoints = 0;
   let stageIndex = 0;
   let currentQuestion = null;
   let currentCategory = null;
+
+  /**
+   * Helper to set a cookie with an expiry. Cookies are used alongside
+   * localStorage so that progress persists even if localStorage is
+   * unavailable. The value is URI‑encoded to handle special characters.
+   * @param {string} name Name of the cookie
+   * @param {string} value Value to store
+   * @param {number} days Number of days before the cookie expires
+   */
+  function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    const expires = 'expires=' + date.toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)};${expires};path=/`;
+  }
+
+  /**
+   * Retrieve a cookie value by name. If the cookie is not found, returns
+   * an empty string. Decodes URI‑encoded values.
+   * @param {string} name Name of the cookie
+   * @returns {string} The cookie value or an empty string
+   */
+  function getCookie(name) {
+    const cname = name + '=';
+    const decoded = decodeURIComponent(document.cookie);
+    const parts = decoded.split(';');
+    for (let i = 0; i < parts.length; i++) {
+      let c = parts[i].trim();
+      if (c.indexOf(cname) === 0) {
+        return c.substring(cname.length, c.length);
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Load persisted progress from localStorage or cookies. If available,
+   * restore the correct answer count and last selected operation so
+   * progress persists across sessions. Use parseInt to convert stored
+   * values back to numbers.
+   */
+  function loadProgress() {
+    // Prefer localStorage if available; fall back to cookies
+    let savedCount = localStorage.getItem('correctAnswers');
+    if (savedCount === null || savedCount === undefined) {
+      savedCount = getCookie('correctAnswers');
+    }
+    const countNum = parseInt(savedCount || '0', 10);
+    if (!isNaN(countNum) && countNum > 0) {
+      correctAnswersCount = countNum;
+    }
+    let savedOp = localStorage.getItem('selectedOperation');
+    if (!savedOp) {
+      savedOp = getCookie('selectedOperation');
+    }
+    if (savedOp) {
+      selectedOperation = savedOp;
+    }
+  }
+
+  /**
+   * Save progress to both localStorage and cookies so that the device
+   * remembers the player’s progress and preferred operation. This
+   * function should be called whenever the correct answer count or
+   * selected operation changes.
+   */
+  function saveProgress() {
+    const countStr = correctAnswersCount.toString();
+    // Save to localStorage
+    try {
+      localStorage.setItem('correctAnswers', countStr);
+      localStorage.setItem('selectedOperation', selectedOperation);
+    } catch (err) {
+      // Ignore errors from private browsing modes
+    }
+    // Persist as cookies for long‑term retention
+    setCookie('correctAnswers', countStr, 365);
+    setCookie('selectedOperation', selectedOperation, 365);
+  }
 
   // Cache DOM elements for efficiency.
   const stageInfoEl = document.getElementById('stageInfo');
@@ -139,59 +219,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const confettiContainer = document.getElementById('confettiContainer');
   const questionContainer = document.getElementById('questionContainer');
 
-  // Audio context and functions for sound effects and music
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let melodyIntervalId = null;
-
-  /**
-   * Play a simple sine-wave beep at a given frequency. Optionally specify
-   * duration and gain. Resumes the AudioContext if it is suspended.
-   * @param {number} frequency Frequency of the tone in Hz
-   * @param {number} duration Duration of the tone in seconds
-   * @param {number} gainValue Volume (0 to 1)
-   */
-  function playBeep(frequency, duration = 0.3, gainValue = 0.1) {
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = frequency;
-    gain.gain.value = gainValue;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-  }
-
-  // Higher-pitched sound for correct answers
-  function playCorrectSound() {
-    playBeep(660, 0.25, 0.15);
-  }
-
-  // Lower-pitched sound for wrong answers
-  function playWrongSound() {
-    playBeep(330, 0.25, 0.15);
-  }
-
-  /**
-   * Start a simple looping melody in the background. The melody uses
-   * gentle tones appropriate for children and loops until the page is
-   * closed. Only starts once to avoid multiple intervals.
-   */
-  function startBackgroundMusic() {
-    if (melodyIntervalId) return;
-    const notes = [523.25, 659.25, 783.99, 659.25]; // C major arpeggio
-    let index = 0;
-    melodyIntervalId = setInterval(() => {
-      playBeep(notes[index], 0.3, 0.05);
-      index = (index + 1) % notes.length;
-    }, 600);
-  }
+  // Preload royalty‑free audio files for correct and wrong answers and background music.
+  // These audio clips come from Mixkit’s free sound effects library and are
+  // distributed under a royalty‑free licence. The preview MP3s are small and
+  // appropriate for quick playback in a browser. If these URLs ever change,
+  // simply update the paths below.
+  const correctAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3');
+  const wrongAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/948/948-preview.mp3');
+  const backgroundAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/667/667-preview.mp3');
+  backgroundAudio.loop = true;
 
   // Kick off background music upon the user's first interaction with the page.
-  document.body.addEventListener('click', startBackgroundMusic, { once: true });
+  document.body.addEventListener('click', () => {
+    // Reset playback in case it has played before and ended
+    backgroundAudio.currentTime = 0;
+    backgroundAudio.play().catch(() => {
+      /* Ignored – browsers may block autoplay without user interaction */
+    });
+  }, { once: true });
+
+  /**
+   * Determine how many points to award for a given difficulty category.
+   * Harder questions yield more points, helping kids progress faster when
+   * tackling challenging problems. Easy levels return just one point.
+   * @param {string} category Difficulty label (e.g. 'Super Easy', 'Hard')
+   * @returns {number} Points to add to the rank counter
+   */
+  function getPointsForDifficulty(category) {
+    switch (category) {
+      case 'Super Easy':
+      case 'Easy':
+      case 'Simple':
+        return 1;
+      case 'Normal':
+        return 2;
+      case 'Hard':
+        return 3;
+      case 'Extra Hard':
+      case 'Einstein':
+        return 4;
+      default:
+        return 1;
+    }
+  }
 
   /**
    * Spawn a burst of confetti particles that fall from the top of the screen.
@@ -459,11 +529,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const correctVal = evaluateAnswer(a, b, op);
     // Use a tolerance for floating point comparisons (for division)
     if (Math.abs(userValue - correctVal) < 0.0001) {
-      // Correct answer: increment progress and celebrate
-      correctAnswersCount++;
+      // Correct answer: award points based on difficulty and celebrate
+      const points = getPointsForDifficulty(currentCategory);
+      correctAnswersCount += points;
       difficultyLabelEl.textContent = `Correct! That was ${currentCategory}.`;
       difficultyLabelEl.style.color = '#28a745';
-      playCorrectSound();
+      // Reset audio to the start and play the correct answer sound
+      try {
+        correctAudio.currentTime = 0;
+        correctAudio.play();
+      } catch (e) {
+        /* Some browsers may prevent playback if not triggered by user */
+      }
       triggerConfetti();
       // Add a temporary animation class to the question container
       if (questionContainer) {
@@ -472,13 +549,20 @@ document.addEventListener('DOMContentLoaded', () => {
           questionContainer.classList.remove('correct');
         }, 600);
       }
+      // Persist progress after a correct answer
+      saveProgress();
       updateStageAndRanks();
       generateQuestion();
     } else {
       // Wrong answer: prompt to try again
       difficultyLabelEl.textContent = 'Oops! Try again.';
       difficultyLabelEl.style.color = '#c0392b';
-      playWrongSound();
+      try {
+        wrongAudio.currentTime = 0;
+        wrongAudio.play();
+      } catch (e) {
+        /* ignore playback errors */
+      }
     }
   }
 
@@ -514,11 +598,16 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', function () {
       selectedOperation = this.getAttribute('data-operation');
       updateOperationButtons();
+      // Save selected operation so the choice persists across sessions
+      saveProgress();
       generateQuestion();
     });
   });
 
-  // Initialise the interface.
+  // Initialise the interface. Load any saved progress from the browser and
+  // apply it before rendering the first question. This restores the
+  // correct answer count and last chosen operation for continuity across sessions.
+  loadProgress();
   updateOperationButtons();
   updateStageAndRanks();
   generateQuestion();
