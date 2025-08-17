@@ -1,0 +1,332 @@
+/*
+ * Styling for the math game.
+ *
+ * The palette uses warm pastel tones to create a friendly environment for
+ * children. Flex layouts allow the design to adapt from desktop to
+ * mobile screens. Buttons and inputs are generously sized for small
+ * fingers, and progress bars provide visual feedback as children work
+ * through the questions and earn ranks and stages.
+ */
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #fff9ec 0%, #ffeedd 100%);
+  color: #333;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Header containing stage information and progress bars */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background-color: #f7d794;
+  border-bottom: 2px solid #e0b878;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stage-info {
+  /* Scale stage label text size with viewport */
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  font-weight: bold;
+  color: #3b4d61;
+  margin-right: 20px;
+}
+
+.progress-section {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.progress-label {
+  margin-right: 8px;
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  color: #584f4f;
+}
+
+.progress-wrapper {
+  width: min(150px, 30vw);
+  height: 14px;
+  background-color: #fff;
+  border: 2px solid #e0b878;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background-color: #00a6a6;
+  transition: width 0.4s ease;
+  border-radius: 8px;
+}
+
+.progress-text {
+  margin-left: 6px;
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  color: #584f4f;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Emoji indicator row for rank progress. Stars fill as the player gains ranks */
+.rank-emojis {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  user-select: none;
+}
+
+/* Main area */
+.main-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.question-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  /* Allow operands to wrap on smaller screens */
+  flex-wrap: wrap;
+}
+
+.operandBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border: 3px solid #a3d5d3;
+  background-color: #eaf7f6;
+  border-radius: 12px;
+  /* Use responsive sizing for operand boxes */
+  width: min(40vw, 180px);
+  min-height: min(40vw, 180px);
+  margin: 0 12px;
+  padding: 8px;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+.emojiContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  flex-grow: 1;
+  /* Font size scales with viewport for emojis */
+  font-size: clamp(20px, 5vw, 36px);
+  line-height: 1.2;
+  overflow-y: auto;
+}
+
+.numberLabel {
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: bold;
+  color: #3b7660;
+  margin-top: 6px;
+}
+
+.operatorSign {
+  font-size: clamp(36px, 8vw, 60px);
+  font-weight: bold;
+  color: #3b7660;
+  margin: 0 8px;
+}
+
+.answer-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.answer-input {
+  width: min(40vw, 160px);
+  padding: 6px 8px;
+  font-size: clamp(18px, 4vw, 22px);
+  border: 2px solid #a3d5d3;
+  border-radius: 6px;
+  outline: none;
+}
+
+.submit-button,
+.skip-button {
+  padding: 8px 14px;
+  font-size: clamp(16px, 3vw, 20px);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.submit-button {
+  background-color: #00a6a6;
+  color: #fff;
+}
+
+.submit-button:hover {
+  background-color: #008080;
+  transform: translateY(-1px);
+}
+
+.skip-button {
+  background-color: #f5b041;
+  color: #fff;
+}
+
+.skip-button:hover {
+  background-color: #d68910;
+  transform: translateY(-1px);
+}
+
+.difficulty-label {
+  font-size: clamp(18px, 4vw, 22px);
+  min-height: 28px;
+  margin-top: 4px;
+}
+
+/* Sidebar for selecting operations */
+.sidebar {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fef9e7;
+  border-left: 2px solid #e0b878;
+  padding: 10px;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  /* Adjust sidebar width to scale on smaller devices */
+  width: min(80px, 20vw);
+}
+
+.sidebar-title {
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: clamp(14px, 2.5vw, 16px);
+  color: #584f4f;
+}
+
+.operationButton {
+  width: min(60px, 12vw);
+  height: min(60px, 12vw);
+  margin: 6px 0;
+  font-size: clamp(24px, 6vw, 32px);
+  border: none;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #3b4d61;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.operationButton:hover {
+  background-color: #f7d794;
+  transform: translateY(-2px);
+}
+
+.operationButton.active {
+  background-color: #00a6a6;
+  color: #fff;
+}
+
+/* Confetti overlay used when a child answers correctly */
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.confetti {
+  position: absolute;
+  opacity: 0.8;
+  border-radius: 50%;
+  animation-name: confettiFall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* Simple flash and scale animation on the question container after a correct answer */
+@keyframes correctFlash {
+  0% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+  50% {
+    background-color: #e6ffe6;
+    transform: scale(1.07);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.question-container.correct {
+  animation: correctFlash 0.6s ease;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .question-container {
+    flex-direction: column;
+  }
+  .operandBox {
+    margin: 8px 0;
+    width: 160px;
+    min-height: 160px;
+  }
+  .operatorSign {
+    margin: 10px 0;
+  }
+  .sidebar {
+    top: auto;
+    bottom: 0;
+    transform: none;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    border-left: none;
+    border-top: 2px solid #e0b878;
+    border-radius: 12px 12px 0 0;
+    padding: 8px;
+  }
+  .operationButton {
+    margin: 0 6px;
+  }
+  .sidebar-title {
+    display: none;
+  }
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fun Math Game for Kids</title>
+  <!--
+    This simple web application provides a friendly way for 6–8 year olds to
+    practise basic arithmetic. Children can pick which operation they’d like
+    to work on (addition, subtraction, multiplication or division) from a
+    control panel on the right. Each equation is represented by a pair of
+    colourful emoji boxes with a number beneath each box, helping young
+    learners visualise the problem. A progress bar at the top tracks how
+    many questions have been answered towards the next “rank”, and a second
+    bar shows progress through the current animal stage. Completing ten
+    questions awards one rank; accumulating ranks unlocks new stages
+    featuring increasingly intelligent animals. Some difficult questions
+    include a “Skip” button that lets learners move on without penalty.
+  -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <div id="stageInfo" class="stage-info">Stage 1: Tiny Worm</div>
+    <div class="progress-section">
+      <div class="progress-label">Questions to next rank:</div>
+      <div class="progress-wrapper">
+        <div class="progress-bar" id="rankProgressBar"></div>
+      </div>
+      <div class="progress-text" id="rankProgressText">0 / 10</div>
+      <!-- Emoji indicators for rank progress. Stars fill as the player earns ranks toward the next stage. -->
+      <div id="rankEmojiContainer" class="rank-emojis"></div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-label">Ranks to next stage:</div>
+      <div class="progress-wrapper">
+        <div class="progress-bar" id="stageProgressBar"></div>
+      </div>
+      <div class="progress-text" id="stageProgressText">0 / 3</div>
+    </div>
+  </header>
+
+  <main id="mainContainer" class="main-container">
+    <div id="questionContainer" class="question-container">
+      <div class="operandBox">
+        <div class="emojiContainer" id="emojiBox1"></div>
+        <div class="numberLabel" id="numberLabel1">0</div>
+      </div>
+      <div class="operatorSign" id="operatorSign">+</div>
+      <div class="operandBox">
+        <div class="emojiContainer" id="emojiBox2"></div>
+        <div class="numberLabel" id="numberLabel2">0</div>
+      </div>
+    </div>
+    <div id="answerContainer" class="answer-container">
+      <input type="number" id="answerInput" class="answer-input" placeholder="Your answer" />
+      <button id="submitButton" class="submit-button">Submit</button>
+      <button id="skipButton" class="skip-button" style="display: none;">Skip</button>
+    </div>
+    <div id="difficultyLabel" class="difficulty-label"></div>
+  </main>
+
+  <!-- Confetti container for celebratory effects on correct answers. -->
+  <div id="confettiContainer" class="confetti-container"></div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-title">Operation</div>
+    <button class="operationButton" data-operation="+">+</button>
+    <button class="operationButton" data-operation="-">−</button>
+    <button class="operationButton" data-operation="×">×</button>
+    <button class="operationButton" data-operation="÷">÷</button>
+  </aside>
+
+  <script src="script.js"></script>
+</body>
+</html>
