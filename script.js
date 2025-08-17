@@ -318,40 +318,63 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Generate operands based on the currently selected operation. The ranges
-   * are designed to be appropriate for children aged 6–8. Division
-   * questions always produce integer results.
+   * Generate a random number between 1 and 30 with a bias towards smaller values.
+   * Squaring Math.random() skews the distribution so that lower numbers appear
+   * more frequently, making easier questions more common than difficult ones.
+   * @returns {number} An integer between 1 and 30 inclusive.
+   */
+  function weightedRandom1to30() {
+    return Math.floor(Math.pow(Math.random(), 2) * 30) + 1;
+  }
+
+  /**
+   * Generate operands based on the currently selected operation. Both
+   * operands are between 1 and 30, and a squared random distribution
+   * favours smaller values. Division questions always produce integer
+   * results by multiplying a divisor and a quotient.
    * @returns {[number, number]} A tuple containing (a, b) where the result of a op b is the answer.
    */
   function generateOperands() {
     let a, b;
     switch (selectedOperation) {
       case '+':
-        a = Math.floor(Math.random() * 31); // 0–30
-        b = Math.floor(Math.random() * 31);
+        a = weightedRandom1to30();
+        b = weightedRandom1to30();
         break;
       case '-':
-        a = Math.floor(Math.random() * 31);
-        b = Math.floor(Math.random() * 31);
+        a = weightedRandom1to30();
+        b = weightedRandom1to30();
         if (b > a) {
           // Swap to avoid negative results
           [a, b] = [b, a];
         }
         break;
       case '×':
-        a = Math.floor(Math.random() * 11); // 0–10
-        b = Math.floor(Math.random() * 11);
+        a = weightedRandom1to30();
+        b = weightedRandom1to30();
         break;
       case '÷':
-        // Create a division question with an integer result.
-        const divisor = Math.floor(Math.random() * 10) + 1; // 1–10
-        const quotient = Math.floor(Math.random() * 10) + 1; // 1–10
-        b = divisor;
-        a = divisor * quotient;
+        // For division we want both operands displayed in the emoji boxes to stay
+        // within 1–30 so that the visual representation remains manageable for
+        // young players. We choose a random dividend (a) between 1 and 30 and
+        // then pick a random divisor (b) that evenly divides a. This ensures
+        // that a ÷ b yields an integer answer and that both a and b stay
+        // within the specified range. Divisors include 1 and the number itself
+        // so that even prime numbers produce valid questions (e.g. 7 ÷ 7 = 1).
+        a = weightedRandom1to30();
+        // Compute all divisors of a
+        const divisors = [];
+        for (let i = 1; i <= a; i++) {
+          if (a % i === 0) {
+            divisors.push(i);
+          }
+        }
+        // Randomly select a divisor
+        b = divisors[Math.floor(Math.random() * divisors.length)];
         break;
       default:
-        a = Math.floor(Math.random() * 31);
-        b = Math.floor(Math.random() * 31);
+        a = weightedRandom1to30();
+        b = weightedRandom1to30();
     }
     return [a, b];
   }
@@ -368,42 +391,41 @@ document.addEventListener('DOMContentLoaded', () => {
   function getDifficultyCategory(a, b, op) {
     let value;
     if (op === '+') {
-      value = a + b;
       // classify by the larger operand rather than the sum to avoid huge ranges
       const maxOperand = Math.max(a, b);
-      if (maxOperand <= 5) return difficultyCategories[0];
-      if (maxOperand <= 8) return difficultyCategories[1];
-      if (maxOperand <= 12) return difficultyCategories[2];
-      if (maxOperand <= 16) return difficultyCategories[3];
-      if (maxOperand <= 20) return difficultyCategories[4];
-      if (maxOperand <= 25) return difficultyCategories[5];
-      return difficultyCategories[6];
+      if (maxOperand <= 4) return difficultyCategories[0]; // 1–4
+      if (maxOperand <= 8) return difficultyCategories[1]; // 5–8
+      if (maxOperand <= 12) return difficultyCategories[2]; // 9–12
+      if (maxOperand <= 16) return difficultyCategories[3]; // 13–16
+      if (maxOperand <= 20) return difficultyCategories[4]; // 17–20
+      if (maxOperand <= 25) return difficultyCategories[5]; // 21–25
+      return difficultyCategories[6]; // 26–30
     } else if (op === '-') {
-      value = a - b;
-      if (value <= 5) return difficultyCategories[0];
-      if (value <= 8) return difficultyCategories[1];
-      if (value <= 12) return difficultyCategories[2];
-      if (value <= 16) return difficultyCategories[3];
-      if (value <= 20) return difficultyCategories[4];
-      if (value <= 25) return difficultyCategories[5];
+      const diff = a - b;
+      if (diff <= 4) return difficultyCategories[0];
+      if (diff <= 8) return difficultyCategories[1];
+      if (diff <= 12) return difficultyCategories[2];
+      if (diff <= 16) return difficultyCategories[3];
+      if (diff <= 20) return difficultyCategories[4];
+      if (diff <= 25) return difficultyCategories[5];
       return difficultyCategories[6];
     } else if (op === '×') {
       value = a * b;
-      if (value <= 10) return difficultyCategories[0];
-      if (value <= 20) return difficultyCategories[1];
-      if (value <= 30) return difficultyCategories[2];
-      if (value <= 40) return difficultyCategories[3];
-      if (value <= 50) return difficultyCategories[4];
-      if (value <= 60) return difficultyCategories[5];
+      if (value <= 50) return difficultyCategories[0];
+      if (value <= 100) return difficultyCategories[1];
+      if (value <= 200) return difficultyCategories[2];
+      if (value <= 300) return difficultyCategories[3];
+      if (value <= 500) return difficultyCategories[4];
+      if (value <= 800) return difficultyCategories[5];
       return difficultyCategories[6];
     } else if (op === '÷') {
       // For division, classify by the divisor: small divisors are easier.
       if (b <= 2) return difficultyCategories[0];
-      if (b <= 3) return difficultyCategories[1];
-      if (b <= 4) return difficultyCategories[2];
-      if (b <= 5) return difficultyCategories[3];
-      if (b <= 6) return difficultyCategories[4];
-      if (b <= 7) return difficultyCategories[5];
+      if (b <= 4) return difficultyCategories[1];
+      if (b <= 6) return difficultyCategories[2];
+      if (b <= 8) return difficultyCategories[3];
+      if (b <= 12) return difficultyCategories[4];
+      if (b <= 20) return difficultyCategories[5];
       return difficultyCategories[6];
     }
     return difficultyCategories[0];
